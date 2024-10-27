@@ -107,3 +107,95 @@
         (ok true)
     )
 )
+
+;; Enhanced Staking Functions
+
+;; Stake STX with optional lock period
+(define-public (stake-stx (amount uint) (lock-period uint))
+    (let
+        (
+            (current-position (default-to 
+                {
+                    total-collateral: u0,
+                    total-debt: u0,
+                    health-factor: u0,
+                    last-updated: u0,
+                    stx-staked: u0,
+                    analytics-tokens: u0,
+                    voting-power: u0,
+                    tier-level: u0,
+                    rewards-multiplier: u100
+                }
+                (map-get? UserPositions tx-sender)))
+        )
+        (asserts! (not (var-get contract-paused)) ERR-PAUSED)
+        (asserts! (>= amount (var-get minimum-stake)) ERR-BELOW-MINIMUM)
+        
+        ;; Transfer STX to contract
+        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+        
+        ;; Calculate tier level and multiplier
+        (let
+            (
+                (new-total-stake (+ (get stx-staked current-position) amount))
+                (tier-info (get-tier-info new-total-stake))
+                (lock-multiplier (calculate-lock-multiplier lock-period))
+            )
+            
+            ;; Update staking position
+            (map-set StakingPositions
+                tx-sender
+                {
+                    amount: amount,
+                    start-block: block-height,
+                    last-claim: block-height,
+                    lock-period: lock-period,
+                    cooldown-start: none,
+                    accumulated-rewards: u0
+                }
+            )
+            
+            ;; Update user position with new tier info
+            (map-set UserPositions
+                tx-sender
+                (merge current-position
+                    {
+                        stx-staked: new-total-stake,
+                        tier-level: (get tier-level tier-info),
+                        rewards-multiplier: (* (get reward-multiplier tier-info) lock-multiplier)
+                    }
+                )
+            )
+            
+            ;; Update STX pool
+            (var-set stx-pool (+ (var-get stx-pool) amount))
+            (ok true)
+        )
+    )
+)
+
+
+;; Get tier info based on stake amount
+(define-private (get-tier-info (stake-amount uint))
+    (if (>= stake-amount u10000000)
+        {tier-level: u3, reward-multiplier: u200}
+        (if (>= stake-amount u5000000)
+            {tier-level: u2, reward-multiplier: u150}
+            {tier-level: u1, reward-multiplier: u100}
+        )
+    )
+)
+
+;; Helper Functions
+
+;; Calculate lock period multiplier
+(define-private (calculate-lock-multiplier (lock-period uint))
+    (if (>= lock-period u8640)     ;; 2 months
+        u150                       ;; 1.5x multiplier
+        (if (>= lock-period u4320) ;; 1 month
+            u125                   ;; 1.25x multiplier
+            u100                   ;; 1x multiplier (no lock)
+        )
+    )
+)
+
