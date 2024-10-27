@@ -199,3 +199,45 @@
     )
 )
 
+
+;; Initiate unstaking with cooldown
+(define-public (initiate-unstake (amount uint))
+    (let
+        (
+            (staking-position (unwrap! (map-get? StakingPositions tx-sender) ERR-NO-STAKE))
+            (current-amount (get amount staking-position))
+        )
+        (asserts! (>= current-amount amount) ERR-INSUFFICIENT-STX)
+        (asserts! (is-none (get cooldown-start staking-position)) ERR-COOLDOWN-ACTIVE)
+        
+        ;; Update staking position with cooldown
+        (map-set StakingPositions
+            tx-sender
+            (merge staking-position
+                {
+                    cooldown-start: (some block-height)
+                }
+            )
+        )
+        (ok true)
+    )
+)
+
+;; Complete unstaking after cooldown
+(define-public (complete-unstake)
+    (let
+        (
+            (staking-position (unwrap! (map-get? StakingPositions tx-sender) ERR-NO-STAKE))
+            (cooldown-start (unwrap! (get cooldown-start staking-position) ERR-NOT-AUTHORIZED))
+        )
+        (asserts! (>= (- block-height cooldown-start) (var-get cooldown-period)) ERR-COOLDOWN-ACTIVE)
+        
+        ;; Transfer STX back to user
+        (try! (as-contract (stx-transfer? (get amount staking-position) tx-sender tx-sender)))
+        
+        ;; Clear staking position
+        (map-delete StakingPositions tx-sender)
+        
+        (ok true)
+    )
+)
