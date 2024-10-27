@@ -3,19 +3,16 @@
 The STX-BitStack Analytics Contract is a smart contract designed for advanced DeFi analytics, staking, governance, and emergency management within the Stacks blockchain ecosystem. The contract provides a multi-tier staking system that incentivizes long-term STX staking through a system of tier levels, lock periods, and bonus multipliers. It also features a governance module, allowing users with sufficient voting power to propose and vote on important protocol changes. Finally, emergency functions enable contract pausing and resumption to ensure security.
 
 ## Features
-** 1. Multi-Tier Staking System **
-Staking: Users can stake STX and optionally lock it for a set period, which increases the reward multiplier.
+**1. Multi-Tier Staking System Staking:** Users can stake STX and optionally lock it for a set period, which increases the reward multiplier.
 Tier Levels: The contract defines three tiers based on the amount staked, each with unique benefits and multipliers.
 Cooldown Period: Users can initiate unstaking, which activates a cooldown period to prevent immediate withdrawals, helping stabilize liquidity.
 Rewards Calculation: Rewards are calculated based on staked amount, staking tier, and lock period multiplier.
 
-** 2. Governance Module **
-Proposal Creation: Users with sufficient voting power can propose changes to the contract.
+**2. Governance Module Proposal Creation:** Users with sufficient voting power can propose changes to the contract.
 Voting on Proposals: Users can vote on active proposals, with options to vote “for” or “against.”
 Proposal Execution: Proposals with majority votes can be executed, enabling decentralized decision-making.
 
-** 3. Emergency Management **
-Contract Pause/Resume: The contract owner can pause or resume the contract in case of emergencies.
+**3. Emergency Management Contract Pause/Resume:** The contract owner can pause or resume the contract in case of emergencies.
 Emergency Mode: Additional safety for managing unforeseen risks or securing funds.
 
 ## Constants and Parameters
